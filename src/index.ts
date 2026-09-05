@@ -1,9 +1,6 @@
 import type { CollectionSlug, Config } from 'payload'
 
 export interface PayloadPluginBranchingConfig {
-  /**
-   * List of collections to enable branching for
-   */
   collections?: Partial<Record<CollectionSlug, true>>
   disabled?: boolean
 }

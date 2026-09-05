@@ -7,7 +7,7 @@ import tseslint from 'typescript-eslint'
 
 export const defaultESLintIgnores = [
   '**/.temp',
-  '**/.*', // ignore all dotfiles
+  '**/.*',
   '**/.git',
   '**/.hg',
   '**/.pnp.*',
@@ -52,8 +52,6 @@ export default [
       ],
     },
   },
-  // Re-applied last so type-checked rule sets above can never reintroduce a
-  // formatting rule that conflicts with Prettier.
   eslintConfigPrettier,
   {
     rules: {
@@ -69,7 +67,6 @@ export default [
           maximumDefaultProjectFileMatchCount_THIS_WILL_SLOW_DOWN_LINTING: 40,
           allowDefaultProject: ['scripts/*.ts', '*.js', '*.mjs', '*.spec.ts', '*.d.ts'],
         },
-        // projectService: true,
         tsconfigRootDir: import.meta.dirname,
       },
     },
