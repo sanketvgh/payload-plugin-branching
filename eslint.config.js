@@ -2,6 +2,7 @@
 
 import payloadEsLintConfig from '@payloadcms/eslint-config'
 import eslintConfigPrettier from 'eslint-config-prettier/flat'
+import commentLength from 'eslint-plugin-comment-length'
 import tseslint from 'typescript-eslint'
 
 export const defaultESLintIgnores = [
@@ -35,6 +36,20 @@ export default [
   {
     files: ['src/**/*.ts'],
     rules: extraStrictRules,
+  },
+  {
+    files: ['src/**/*.ts'],
+    plugins: { 'comment-length': commentLength },
+    rules: {
+      'comment-length/limit-single-line-comments': [
+        'error',
+        { maxLength: 80, ignoreUrls: true, ignoreCommentsWithCode: true },
+      ],
+      'comment-length/limit-multi-line-comments': [
+        'error',
+        { maxLength: 80, ignoreUrls: true, ignoreCommentsWithCode: true },
+      ],
+    },
   },
   // Re-applied last so type-checked rule sets above can never reintroduce a
   // formatting rule that conflicts with Prettier.
