@@ -1,6 +1,6 @@
 {
   "name": "payload-plugin-branching",
-  "version": "0.0.0",
+  "version": "0.1.0-beta.0",
   "description": "Git-like content branching for Payload CMS",
   "keywords": [
     "payload",
