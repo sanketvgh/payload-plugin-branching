@@ -2,13 +2,16 @@ name: Release
 
 run-name: >-
   Manual release (${{ inputs.mode }}${{ inputs.dry_run && ', dry-run' || '' }})
-  on ${{ inputs.ref }}
+  on ${{ inputs.target_ref }}
 
 on:
   workflow_dispatch:
     inputs:
-      ref:
-        description: 'Branch to release from (e.g. main or next)'
+      target_ref:
+        description: >-
+          Branch to release from (e.g. main or next). Must match the --ref
+          flag passed to `gh workflow run` / the branch selected in the UI,
+          since that controls which copy of this workflow file actually runs.
         required: true
         type: string
       mode:
@@ -26,7 +29,7 @@ on:
         default: true
 
 concurrency:
-  group: release-${{ github.workflow }}-${{ inputs.ref }}
+  group: release-${{ github.workflow }}-${{ inputs.target_ref }}
   cancel-in-progress: false
 
 permissions:
@@ -50,7 +53,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
         with:
-          ref: ${{ inputs.ref }}
+          ref: ${{ inputs.target_ref }}
           fetch-depth: 0
 
       - name: Setup pnpm
@@ -66,8 +69,27 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Get installed Playwright version
+        id: playwright-version
+        run: echo "version=$(pnpm exec playwright --version | awk '{print $2}')" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ steps.playwright-version.outputs.version }}
+
+      - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Install Playwright OS dependencies
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: pnpm exec playwright install-deps chromium
+
       - name: Guard against stray pre.json on main
-        if: inputs.ref == 'main'
+        if: inputs.target_ref == 'main'
         run: |
           if [ -f .changeset/pre.json ]; then
             echo "::error::.changeset/pre.json found on main. Prerelease mode must never be entered on main; run it on the 'next' branch only."
@@ -94,12 +116,12 @@ jobs:
           pr-title: '🔖 chore: version packages'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Dry-run publish preview
         if: inputs.mode == 'publish' && inputs.dry_run
         run: |
           pnpm changeset:version
           pnpm build
-          npm publish --dry-run --access public
+          TAG=$(node -p "require('./.changeset/pre.json').tag" 2>/dev/null || echo latest)
+          npm publish --dry-run --access public --tag "$TAG"
           echo "Dry run complete: no npm publish, no git push performed."
