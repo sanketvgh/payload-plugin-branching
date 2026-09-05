@@ -54,3 +54,7 @@ next-env.d.ts
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+
+# personal scratch/proposal docs, never committed
+/.scratch/*
+!/.scratch/.gitkeep

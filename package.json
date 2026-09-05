@@ -2,6 +2,21 @@
   "name": "payload-plugin-branching",
   "version": "0.0.0",
   "description": "Git-like content branching for Payload CMS",
+  "keywords": [
+    "payload",
+    "payloadcms",
+    "payload-plugin",
+    "cms",
+    "branching"
+  ],
+  "homepage": "https://github.com/sanketvgh/payload-plugin-branching#readme",
+  "bugs": {
+    "url": "https://github.com/sanketvgh/payload-plugin-branching/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sanketvgh/payload-plugin-branching.git"
+  },
   "author": "Sanket Vaghela",
   "license": "MIT",
   "type": "module",
@@ -39,9 +54,13 @@
     "test": "pnpm test:int && pnpm test:e2e",
     "test:e2e": "playwright test",
     "test:int": "vitest",
-    "prepare": "husky"
+    "prepare": "husky",
+    "changeset": "changeset",
+    "changeset:version": "changeset version",
+    "changeset:publish": "pnpm build && changeset publish"
   },
   "devDependencies": {
+    "@changesets/cli": "^3.0.2",
     "@commitlint/cli": "^21.2.2",
     "@commitlint/config-conventional": "^21.2.2",
     "@eslint/eslintrc": "^3.2.0",
@@ -92,6 +111,7 @@
   },
   "packageManager": "pnpm@11.15.0",
   "publishConfig": {
+    "access": "public",
     "exports": {
       ".": {
         "import": "./dist/index.js",
@@ -107,7 +127,6 @@
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts"
   },
-  "registry": "https://registry.npmjs.org/",
   "lint-staged": {
     "*.{ts,tsx,js,mjs}": [
       "eslint --fix",

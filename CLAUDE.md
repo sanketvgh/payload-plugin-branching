@@ -27,6 +27,12 @@ Pre-commit runs `lint-staged` (ESLint --fix + Prettier) via Husky.
 - Payload CMS docs (llms.txt): https://payloadcms.com/llms.txt. Consult this for current Payload APIs rather than relying on training data.
 - Target Payload version: `^3.0.0`.
 
+## Scratch / proposal docs
+
+- `.scratch/` holds personal proposal/planning docs that are not meant to be committed. It's
+  gitignored. Write exploratory or proposal markdown there, not at the repo root, unless the
+  user explicitly asks for a committed doc.
+
 ## Conventions
 
 - Default to no comments. Only add a comment when the code cannot explain itself (a non-obvious constraint, a workaround, a subtle invariant), and keep it to one short line, never a paragraph.

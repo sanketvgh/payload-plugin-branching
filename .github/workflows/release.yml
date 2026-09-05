@@ -1,0 +1,105 @@
+name: Release
+
+run-name: >-
+  Manual release (${{ inputs.mode }}${{ inputs.dry_run && ', dry-run' || '' }})
+  on ${{ inputs.ref }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Branch to release from (e.g. main or next)'
+        required: true
+        type: string
+      mode:
+        description: 'What to do'
+        required: true
+        type: choice
+        options:
+          - version-pr
+          - publish
+        default: version-pr
+      dry_run:
+        description: 'Dry run: run version/build/publish steps but skip the actual npm publish and git push'
+        required: false
+        type: boolean
+        default: true
+
+concurrency:
+  group: release-${{ github.workflow }}-${{ inputs.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  guard-repo:
+    runs-on: ubuntu-latest
+    if: github.repository == 'sanketvgh/payload-plugin-branching'
+    steps:
+      - run: echo "Repository guard passed."
+
+  release:
+    needs: guard-repo
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: lts/*
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Guard against stray pre.json on main
+        if: inputs.ref == 'main'
+        run: |
+          if [ -f .changeset/pre.json ]; then
+            echo "::error::.changeset/pre.json found on main. Prerelease mode must never be entered on main; run it on the 'next' branch only."
+            exit 1
+          fi
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Test
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
+
+      - name: Create Release Pull Request or Publish
+        if: inputs.mode == 'version-pr' || (inputs.mode == 'publish' && !inputs.dry_run)
+        id: changesets
+        uses: changesets/action@v2
+        with:
+          version-script: pnpm changeset:version
+          publish-script: ${{ inputs.mode == 'publish' && 'pnpm changeset:publish' || '' }}
+          commit-message: '🔖 chore: version packages'
+          pr-title: '🔖 chore: version packages'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Dry-run publish preview
+        if: inputs.mode == 'publish' && inputs.dry_run
+        run: |
+          pnpm changeset:version
+          pnpm build
+          npm publish --dry-run --access public
+          echo "Dry run complete: no npm publish, no git push performed."
