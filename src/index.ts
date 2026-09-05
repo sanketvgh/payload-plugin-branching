@@ -15,12 +15,19 @@ export const payloadPluginBranching =
       return config
     }
 
+    config.admin ??= {}
+    config.admin.components ??= {}
+    config.admin.components.beforeDashboard ??= []
+    config.admin.components.beforeDashboard.push('payload-plugin-branching/rsc#Greeting')
+
     const incomingOnInit = config.onInit
 
     config.onInit = async (payload) => {
       if (incomingOnInit) {
         await incomingOnInit(payload)
       }
+
+      payload.logger.info('payload-plugin-branching initialized')
     }
 
     return config

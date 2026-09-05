@@ -18,6 +18,7 @@ export const defaultESLintIgnores = [
   '**/README.md',
   '**/eslint.config.js',
   '**/payload-types.ts',
+  '**/admin/importMap.js',
   '**/dist/',
   '**/.yarn/',
   '**/build/',
