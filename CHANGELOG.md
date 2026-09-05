@@ -1,5 +1,11 @@
 # payload-plugin-branching
 
+## 0.1.1-beta.0
+
+### Patch Changes
+
+- d13a418: Add a warning emoji to the README status warning for visibility.
+
 ## 0.1.0
 
 ### Minor Changes
