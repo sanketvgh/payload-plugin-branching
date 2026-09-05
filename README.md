@@ -11,9 +11,8 @@ A [Payload CMS](https://payloadcms.com) plugin that brings Git-like branching to
 > This plugin does not work yet. It is in early development and active deployment/tooling
 > setup. Do not install or use it in a real project.
 
-Published to npm under the `beta` tag (`pnpm add payload-plugin-branching@beta`). Note that
-plain `pnpm add payload-plugin-branching` currently also resolves to this same beta version,
-since it's the only version published so far.
+Beta builds are published under the `beta` npm tag (`pnpm add payload-plugin-branching@beta`).
+Use at your own risk.
 
 ## Planned features
 
