@@ -116,12 +116,9 @@ jobs:
           pr-title: '🔖 chore: version packages'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Dry-run publish preview
         if: inputs.mode == 'publish' && inputs.dry_run
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           pnpm changeset:version
           pnpm build
