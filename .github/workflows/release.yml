@@ -125,5 +125,6 @@ jobs:
         run: |
           pnpm changeset:version
           pnpm build
-          npm publish --dry-run --access public
+          TAG=$(node -p "require('./.changeset/pre.json').tag" 2>/dev/null || echo latest)
+          npm publish --dry-run --access public --tag "$TAG"
           echo "Dry run complete: no npm publish, no git push performed."
