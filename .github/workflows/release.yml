@@ -2,13 +2,16 @@ name: Release
 
 run-name: >-
   Manual release (${{ inputs.mode }}${{ inputs.dry_run && ', dry-run' || '' }})
-  on ${{ inputs.ref }}
+  on ${{ inputs.target_ref }}
 
 on:
   workflow_dispatch:
     inputs:
-      ref:
-        description: 'Branch to release from (e.g. main or next)'
+      target_ref:
+        description: >-
+          Branch to release from (e.g. main or next). Must match the --ref
+          flag passed to `gh workflow run` / the branch selected in the UI,
+          since that controls which copy of this workflow file actually runs.
         required: true
         type: string
       mode:
@@ -26,7 +29,7 @@ on:
         default: true
 
 concurrency:
-  group: release-${{ github.workflow }}-${{ inputs.ref }}
+  group: release-${{ github.workflow }}-${{ inputs.target_ref }}
   cancel-in-progress: false
 
 permissions:
@@ -50,7 +53,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
         with:
-          ref: ${{ inputs.ref }}
+          ref: ${{ inputs.target_ref }}
           fetch-depth: 0
 
       - name: Setup pnpm
@@ -86,7 +89,7 @@ jobs:
         run: pnpm exec playwright install-deps chromium
 
       - name: Guard against stray pre.json on main
-        if: inputs.ref == 'main'
+        if: inputs.target_ref == 'main'
         run: |
           if [ -f .changeset/pre.json ]; then
             echo "::error::.changeset/pre.json found on main. Prerelease mode must never be entered on main; run it on the 'next' branch only."
