@@ -26,7 +26,12 @@ const buildConfigForDev = async () => {
     collections: [
       {
         slug: 'posts',
-        fields: [],
+        fields: [
+          {
+            name: 'content',
+            type: 'textarea',
+          },
+        ],
       },
       {
         slug: 'media',
@@ -40,13 +45,15 @@ const buildConfigForDev = async () => {
       client: {
         url: process.env.DATABASE_URL || `file:${path.resolve(dirname, 'payload.db')}`,
       },
+      migrationDir: path.resolve(dirname, 'migrations'),
+      push: false,
     }),
     editor: lexicalEditor(),
     email: testEmailAdapter,
     onInit: async (payload) => {
       await seed(payload)
     },
-    plugins: [payloadPluginBranching({})],
+    plugins: [payloadPluginBranching({ collections: { posts: true } })],
     secret: process.env.PAYLOAD_SECRET || 'test-secret_key',
     sharp,
     typescript: {

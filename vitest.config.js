@@ -18,7 +18,7 @@ export default defineConfig(() => {
     ],
     test: {
       environment: 'node',
-      exclude: [...configDefaults.exclude, 'dev/e2e.spec.ts'],
+      exclude: [...configDefaults.exclude, 'dev/e2e.spec.ts', '.scratch/**'],
       hookTimeout: 30_000,
       testTimeout: 30_000,
     },
