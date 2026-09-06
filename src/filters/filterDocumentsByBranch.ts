@@ -1,35 +1,35 @@
 import type { PayloadRequest, Where } from 'payload'
 
+import { getActiveBranch } from '../utilities/getActiveBranch.js'
 import { getBranchAncestry } from '../utilities/getBranchAncestry.js'
-import { getBranchFromCookie } from '../utilities/getBranchFromCookie.js'
 import { getCollectionIDType } from '../utilities/getCollectionIDType.js'
 
 interface Args {
-  branchClosureSlug: string
   branchesSlug: string
   branchFieldName: string
   req: PayloadRequest
 }
 
 export async function filterDocumentsByBranch({
-  branchClosureSlug,
   branchesSlug,
   branchFieldName,
   req,
 }: Args): Promise<null | Where> {
   const idType = getCollectionIDType({ collectionSlug: branchesSlug, payload: req.payload })
-  const activeBranch = getBranchFromCookie(req.headers, idType)
+  const activeBranch = getActiveBranch({ idType, req })
 
   if (!activeBranch) {
     return null
   }
 
+  // Falls back to "just the active branch, no ancestors" rather than
+  // breaking the admin list view entirely if the ancestry lookup fails
+  // for any reason (e.g. a stale/deleted branch id).
   const ancestry = await getBranchAncestry({
-    branchClosureSlug,
+    branchesSlug,
     branchId: activeBranch,
     payload: req.payload,
-    req,
-  })
+  }).catch(() => [])
 
   return {
     or: [

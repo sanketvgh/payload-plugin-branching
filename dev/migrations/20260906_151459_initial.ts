@@ -7,6 +7,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	\`id\` integer PRIMARY KEY NOT NULL,
   	\`branch_id\` integer,
   	\`canonical_id\` text,
+  	\`title\` text NOT NULL,
   	\`content\` text,
   	\`updated_at\` text DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) NOT NULL,
   	\`created_at\` text DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) NOT NULL,
@@ -56,28 +57,27 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   await db.run(
     sql`CREATE INDEX \`payload_branches_created_at_idx\` ON \`payload_branches\` (\`created_at\`);`,
   )
-  await db.run(sql`CREATE TABLE \`payload_branch_closure\` (
+  await db.run(sql`CREATE TABLE \`payload_branches_rels\` (
   	\`id\` integer PRIMARY KEY NOT NULL,
-  	\`ancestor_id\` integer NOT NULL,
-  	\`descendant_id\` integer NOT NULL,
-  	\`depth\` numeric NOT NULL,
-  	\`updated_at\` text DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) NOT NULL,
-  	\`created_at\` text DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) NOT NULL,
-  	FOREIGN KEY (\`ancestor_id\`) REFERENCES \`payload_branches\`(\`id\`) ON UPDATE no action ON DELETE set null,
-  	FOREIGN KEY (\`descendant_id\`) REFERENCES \`payload_branches\`(\`id\`) ON UPDATE no action ON DELETE set null
+  	\`order\` integer,
+  	\`parent_id\` integer NOT NULL,
+  	\`path\` text NOT NULL,
+  	\`payload_branches_id\` integer,
+  	FOREIGN KEY (\`parent_id\`) REFERENCES \`payload_branches\`(\`id\`) ON UPDATE no action ON DELETE cascade,
+  	FOREIGN KEY (\`payload_branches_id\`) REFERENCES \`payload_branches\`(\`id\`) ON UPDATE no action ON DELETE cascade
   );
   `)
   await db.run(
-    sql`CREATE INDEX \`payload_branch_closure_ancestor_idx\` ON \`payload_branch_closure\` (\`ancestor_id\`);`,
+    sql`CREATE INDEX \`payload_branches_rels_order_idx\` ON \`payload_branches_rels\` (\`order\`);`,
   )
   await db.run(
-    sql`CREATE INDEX \`payload_branch_closure_descendant_idx\` ON \`payload_branch_closure\` (\`descendant_id\`);`,
+    sql`CREATE INDEX \`payload_branches_rels_parent_idx\` ON \`payload_branches_rels\` (\`parent_id\`);`,
   )
   await db.run(
-    sql`CREATE INDEX \`payload_branch_closure_updated_at_idx\` ON \`payload_branch_closure\` (\`updated_at\`);`,
+    sql`CREATE INDEX \`payload_branches_rels_path_idx\` ON \`payload_branches_rels\` (\`path\`);`,
   )
   await db.run(
-    sql`CREATE INDEX \`payload_branch_closure_created_at_idx\` ON \`payload_branch_closure\` (\`created_at\`);`,
+    sql`CREATE INDEX \`payload_branches_rels_payload_branches_id_idx\` ON \`payload_branches_rels\` (\`payload_branches_id\`);`,
   )
   await db.run(sql`CREATE TABLE \`payload_kv\` (
   	\`id\` integer PRIMARY KEY NOT NULL,
@@ -139,13 +139,11 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	\`posts_id\` integer,
   	\`media_id\` integer,
   	\`payload_branches_id\` integer,
-  	\`payload_branch_closure_id\` integer,
   	\`users_id\` integer,
   	FOREIGN KEY (\`parent_id\`) REFERENCES \`payload_locked_documents\`(\`id\`) ON UPDATE no action ON DELETE cascade,
   	FOREIGN KEY (\`posts_id\`) REFERENCES \`posts\`(\`id\`) ON UPDATE no action ON DELETE cascade,
   	FOREIGN KEY (\`media_id\`) REFERENCES \`media\`(\`id\`) ON UPDATE no action ON DELETE cascade,
   	FOREIGN KEY (\`payload_branches_id\`) REFERENCES \`payload_branches\`(\`id\`) ON UPDATE no action ON DELETE cascade,
-  	FOREIGN KEY (\`payload_branch_closure_id\`) REFERENCES \`payload_branch_closure\`(\`id\`) ON UPDATE no action ON DELETE cascade,
   	FOREIGN KEY (\`users_id\`) REFERENCES \`users\`(\`id\`) ON UPDATE no action ON DELETE cascade
   );
   `)
@@ -166,9 +164,6 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   )
   await db.run(
     sql`CREATE INDEX \`payload_locked_documents_rels_payload_branches_id_idx\` ON \`payload_locked_documents_rels\` (\`payload_branches_id\`);`,
-  )
-  await db.run(
-    sql`CREATE INDEX \`payload_locked_documents_rels_payload_branch_closure_id_idx\` ON \`payload_locked_documents_rels\` (\`payload_branch_closure_id\`);`,
   )
   await db.run(
     sql`CREATE INDEX \`payload_locked_documents_rels_users_id_idx\` ON \`payload_locked_documents_rels\` (\`users_id\`);`,
@@ -232,7 +227,7 @@ export async function down({ db, payload, req }: MigrateDownArgs): Promise<void>
   await db.run(sql`DROP TABLE \`posts\`;`)
   await db.run(sql`DROP TABLE \`media\`;`)
   await db.run(sql`DROP TABLE \`payload_branches\`;`)
-  await db.run(sql`DROP TABLE \`payload_branch_closure\`;`)
+  await db.run(sql`DROP TABLE \`payload_branches_rels\`;`)
   await db.run(sql`DROP TABLE \`payload_kv\`;`)
   await db.run(sql`DROP TABLE \`users_sessions\`;`)
   await db.run(sql`DROP TABLE \`users\`;`)

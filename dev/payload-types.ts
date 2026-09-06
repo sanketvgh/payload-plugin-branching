@@ -70,7 +70,6 @@ export interface Config {
     posts: Post;
     media: Media;
     'payload-branches': PayloadBranch;
-    'payload-branch-closure': PayloadBranchClosure;
     'payload-kv': PayloadKv;
     users: User;
     'payload-locked-documents': PayloadLockedDocument;
@@ -82,7 +81,6 @@ export interface Config {
     posts: PostsSelect<false> | PostsSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     'payload-branches': PayloadBranchesSelect<false> | PayloadBranchesSelect<true>;
-    'payload-branch-closure': PayloadBranchClosureSelect<false> | PayloadBranchClosureSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -131,6 +129,7 @@ export interface Post {
   id: number;
   branch?: (number | null) | PayloadBranch;
   canonicalId?: string | null;
+  title: string;
   content?: string | null;
   updatedAt: string;
   createdAt: string;
@@ -143,6 +142,7 @@ export interface PayloadBranch {
   id: number;
   name: string;
   parentBranch?: (number | null) | PayloadBranch;
+  ancestorIds?: (number | PayloadBranch)[] | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -163,18 +163,6 @@ export interface Media {
   height?: number | null;
   focalX?: number | null;
   focalY?: number | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "payload-branch-closure".
- */
-export interface PayloadBranchClosure {
-  id: number;
-  ancestor: number | PayloadBranch;
-  descendant: number | PayloadBranch;
-  depth: number;
-  updatedAt: string;
-  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -238,10 +226,6 @@ export interface PayloadLockedDocument {
         value: number | PayloadBranch;
       } | null)
     | ({
-        relationTo: 'payload-branch-closure';
-        value: number | PayloadBranchClosure;
-      } | null)
-    | ({
         relationTo: 'users';
         value: number | User;
       } | null);
@@ -294,6 +278,7 @@ export interface PayloadMigration {
 export interface PostsSelect<T extends boolean = true> {
   branch?: T;
   canonicalId?: T;
+  title?: T;
   content?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -322,17 +307,7 @@ export interface MediaSelect<T extends boolean = true> {
 export interface PayloadBranchesSelect<T extends boolean = true> {
   name?: T;
   parentBranch?: T;
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "payload-branch-closure_select".
- */
-export interface PayloadBranchClosureSelect<T extends boolean = true> {
-  ancestor?: T;
-  descendant?: T;
-  depth?: T;
+  ancestorIds?: T;
   updatedAt?: T;
   createdAt?: T;
 }

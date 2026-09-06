@@ -1,6 +1,7 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { branchQueryParamName } from 'payload-plugin-branching'
 import { useTransition } from 'react'
 
 interface Branch {
@@ -9,43 +10,55 @@ interface Branch {
 }
 
 type Args = {
-  activeBranchId: null | string
   branches: Branch[]
 }
 
-const BranchSwitcher = ({ activeBranchId, branches }: Args) => {
+const BranchSwitcher = ({ branches }: Args) => {
   const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
   const [isPending, startTransition] = useTransition()
 
-  const onChange = async (event: React.ChangeEvent<HTMLSelectElement>) => {
-    const branchId = event.target.value || null
+  const activeBranchId = searchParams.get(branchQueryParamName)
 
-    await fetch('/api/branch', {
-      body: JSON.stringify({ branchId }),
-      headers: { 'Content-Type': 'application/json' },
-      method: 'POST',
-    })
+  const selectBranch = (branchId: null | string) => {
+    const params = new URLSearchParams(searchParams)
+
+    if (branchId) {
+      params.set(branchQueryParamName, branchId)
+    } else {
+      params.delete(branchQueryParamName)
+    }
+
+    const query = params.toString()
 
     startTransition(() => {
-      router.refresh()
+      router.push(query ? `${pathname}?${query}` : pathname)
     })
   }
 
+  const options: Branch[] = [{ id: '', name: 'Default' }, ...branches]
+
   return (
-    <select
-      defaultValue={activeBranchId ?? ''}
-      disabled={isPending}
-      onChange={(event) => {
-        void onChange(event)
-      }}
-    >
-      <option value="">Default</option>
-      {branches.map((branch) => (
-        <option key={branch.id} value={branch.id}>
-          {branch.name}
-        </option>
-      ))}
-    </select>
+    <div className="branch-switcher">
+      {options.map((option) => {
+        const isActive = (activeBranchId ?? '') === option.id
+
+        return (
+          <button
+            className={`branch-switcher__pill${isActive ? ' branch-switcher__pill--active' : ''}`}
+            disabled={isPending}
+            key={option.id || 'default'}
+            onClick={() => {
+              selectBranch(option.id || null)
+            }}
+            type="button"
+          >
+            {option.name}
+          </button>
+        )
+      })}
+    </div>
   )
 }
 

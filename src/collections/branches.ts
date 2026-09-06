@@ -1,25 +1,79 @@
-import type { CollectionConfig, PayloadRequest } from 'payload'
+import type { CollectionAfterChangeHook, CollectionConfig, PayloadRequest } from 'payload'
+
+import { APIError } from 'payload'
+
+import { generateBranchCookie } from '../utilities/generateBranchCookie.js'
 
 interface Args {
-  closureSlug: string
   slug: string
 }
 
 interface BranchDoc {
+  ancestorIds?: (number | string)[] | null
   id: number | string
   parentBranch?: { id: number | string } | null | number | string
 }
 
-interface ClosureRow {
-  ancestor: { id: number | string } | number | string
-  depth: number
-}
-
-export const branches = ({ slug, closureSlug }: Args): CollectionConfig => ({
+export const branches = ({ slug }: Args): CollectionConfig => ({
   slug,
   admin: {
     useAsTitle: 'name',
   },
+  endpoints: [
+    {
+      handler: async (req: PayloadRequest) => {
+        if (!req.user) {
+          throw new APIError(
+            'You must be logged in to switch the active branch.',
+            401,
+            undefined,
+            true,
+          )
+        }
+
+        const body = (await req.json?.().catch(() => null)) as { id?: null | string } | null
+
+        if (body === null || !('id' in body)) {
+          throw new APIError(
+            'Expected a JSON body with an "id" field (a branch id, or null to clear the active branch).',
+            400,
+            undefined,
+            true,
+          )
+        }
+
+        const { id } = body
+
+        if (id) {
+          const branch = await req.payload
+            .findByID({ id, collection: slug, depth: 0, req })
+            .catch(() => null)
+
+          if (!branch) {
+            throw new APIError(
+              `No branch exists with id "${id}". It may have been deleted; refresh the branch list and try again.`,
+              404,
+              undefined,
+              true,
+            )
+          }
+        }
+
+        const headers = new Headers()
+
+        headers.set(
+          'Set-Cookie',
+          id
+            ? generateBranchCookie({ value: id })
+            : generateBranchCookie({ expires: new Date(0), value: '' }),
+        )
+
+        return Response.json({ message: 'Active branch updated' }, { headers, status: 200 })
+      },
+      method: 'post',
+      path: '/switch-active-branch',
+    },
+  ],
   fields: [
     {
       name: 'name',
@@ -32,68 +86,46 @@ export const branches = ({ slug, closureSlug }: Args): CollectionConfig => ({
       type: 'relationship',
       relationTo: slug,
     },
+    {
+      name: 'ancestorIds',
+      type: 'relationship',
+      admin: {
+        hidden: true,
+      },
+      hasMany: true,
+      relationTo: slug,
+    },
   ],
   hooks: {
     afterChange: [
-      async ({
-        doc,
-        operation,
-        req,
-      }: {
-        doc: BranchDoc
-        operation: string
-        req: PayloadRequest
-      }) => {
-        if (operation !== 'create') {
+      (async ({ doc, operation, req }) => {
+        if (operation !== 'create' || !doc.parentBranch) {
           return
         }
 
-        const rows: { ancestor: number | string; depth: number }[] = [
-          { ancestor: doc.id, depth: 0 },
-        ]
+        const parentId =
+          typeof doc.parentBranch === 'object' ? doc.parentBranch.id : doc.parentBranch
 
-        if (doc.parentBranch) {
-          const parentId =
-            typeof doc.parentBranch === 'object' ? doc.parentBranch.id : doc.parentBranch
-
-          const parentAncestry = await req.payload.find({
-            collection: closureSlug,
-            limit: 0,
-            req,
-            where: {
-              descendant: { equals: parentId },
-            },
-          })
-
-          for (const row of parentAncestry.docs as unknown as ClosureRow[]) {
-            const ancestorId = typeof row.ancestor === 'object' ? row.ancestor.id : row.ancestor
-            rows.push({ ancestor: ancestorId, depth: row.depth + 1 })
-          }
-        }
-
-        for (const row of rows) {
-          await req.payload.create({
-            collection: closureSlug,
-            data: {
-              ancestor: row.ancestor,
-              depth: row.depth,
-              descendant: doc.id,
-            },
-            req,
-          })
-        }
-      },
-    ],
-    beforeDelete: [
-      async ({ id, req }: { id: number | string; req: PayloadRequest }) => {
-        await req.payload.delete({
-          collection: closureSlug,
+        // Nearest-first, mirroring the ordering pickBestBranchMatch ranks
+        // by: the parent itself, then whatever the parent already resolved
+        // as its own ancestors. Computed once here (branches are rarely
+        // created, this cost is paid once, not on every document read).
+        const parent = (await req.payload.findByID({
+          id: parentId,
+          collection: slug,
+          depth: 0,
           req,
-          where: {
-            or: [{ ancestor: { equals: id } }, { descendant: { equals: id } }],
-          },
+        })) as BranchDoc
+
+        const ancestorIds = [parentId, ...(parent.ancestorIds ?? [])]
+
+        await req.payload.update({
+          id: doc.id,
+          collection: slug,
+          data: { ancestorIds },
+          req,
         })
-      },
+      }) satisfies CollectionAfterChangeHook<BranchDoc>,
     ],
   },
 })

@@ -26,6 +26,13 @@
           "notNull": false,
           "autoincrement": false
         },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
         "content": {
           "name": "content",
           "type": "text",
@@ -277,8 +284,8 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "payload_branch_closure": {
-      "name": "payload_branch_closure",
+    "payload_branches_rels": {
+      "name": "payload_branches_rels",
       "columns": {
         "id": {
           "name": "id",
@@ -287,83 +294,74 @@
           "notNull": true,
           "autoincrement": false
         },
-        "ancestor_id": {
-          "name": "ancestor_id",
+        "order": {
+          "name": "order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "parent_id": {
+          "name": "parent_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
-        "descendant_id": {
-          "name": "descendant_id",
+        "path": {
+          "name": "path",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "payload_branches_id": {
+          "name": "payload_branches_id",
           "type": "integer",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
           "autoincrement": false
-        },
-        "depth": {
-          "name": "depth",
-          "type": "numeric",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
         }
       },
       "indexes": {
-        "payload_branch_closure_ancestor_idx": {
-          "name": "payload_branch_closure_ancestor_idx",
-          "columns": ["ancestor_id"],
+        "payload_branches_rels_order_idx": {
+          "name": "payload_branches_rels_order_idx",
+          "columns": ["order"],
           "isUnique": false
         },
-        "payload_branch_closure_descendant_idx": {
-          "name": "payload_branch_closure_descendant_idx",
-          "columns": ["descendant_id"],
+        "payload_branches_rels_parent_idx": {
+          "name": "payload_branches_rels_parent_idx",
+          "columns": ["parent_id"],
           "isUnique": false
         },
-        "payload_branch_closure_updated_at_idx": {
-          "name": "payload_branch_closure_updated_at_idx",
-          "columns": ["updated_at"],
+        "payload_branches_rels_path_idx": {
+          "name": "payload_branches_rels_path_idx",
+          "columns": ["path"],
           "isUnique": false
         },
-        "payload_branch_closure_created_at_idx": {
-          "name": "payload_branch_closure_created_at_idx",
-          "columns": ["created_at"],
+        "payload_branches_rels_payload_branches_id_idx": {
+          "name": "payload_branches_rels_payload_branches_id_idx",
+          "columns": ["payload_branches_id"],
           "isUnique": false
         }
       },
       "foreignKeys": {
-        "payload_branch_closure_ancestor_id_payload_branches_id_fk": {
-          "name": "payload_branch_closure_ancestor_id_payload_branches_id_fk",
-          "tableFrom": "payload_branch_closure",
+        "payload_branches_rels_parent_fk": {
+          "name": "payload_branches_rels_parent_fk",
+          "tableFrom": "payload_branches_rels",
           "tableTo": "payload_branches",
-          "columnsFrom": ["ancestor_id"],
+          "columnsFrom": ["parent_id"],
           "columnsTo": ["id"],
-          "onDelete": "set null",
+          "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "payload_branch_closure_descendant_id_payload_branches_id_fk": {
-          "name": "payload_branch_closure_descendant_id_payload_branches_id_fk",
-          "tableFrom": "payload_branch_closure",
+        "payload_branches_rels_payload_branches_fk": {
+          "name": "payload_branches_rels_payload_branches_fk",
+          "tableFrom": "payload_branches_rels",
           "tableTo": "payload_branches",
-          "columnsFrom": ["descendant_id"],
+          "columnsFrom": ["payload_branches_id"],
           "columnsTo": ["id"],
-          "onDelete": "set null",
+          "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
@@ -681,13 +679,6 @@
           "notNull": false,
           "autoincrement": false
         },
-        "payload_branch_closure_id": {
-          "name": "payload_branch_closure_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
         "users_id": {
           "name": "users_id",
           "type": "integer",
@@ -725,11 +716,6 @@
         "payload_locked_documents_rels_payload_branches_id_idx": {
           "name": "payload_locked_documents_rels_payload_branches_id_idx",
           "columns": ["payload_branches_id"],
-          "isUnique": false
-        },
-        "payload_locked_documents_rels_payload_branch_closure_id_idx": {
-          "name": "payload_locked_documents_rels_payload_branch_closure_id_idx",
-          "columns": ["payload_branch_closure_id"],
           "isUnique": false
         },
         "payload_locked_documents_rels_users_id_idx": {
@@ -771,15 +757,6 @@
           "tableFrom": "payload_locked_documents_rels",
           "tableTo": "payload_branches",
           "columnsFrom": ["payload_branches_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "payload_locked_documents_rels_payload_branch_closure_fk": {
-          "name": "payload_locked_documents_rels_payload_branch_closure_fk",
-          "tableFrom": "payload_locked_documents_rels",
-          "tableTo": "payload_branch_closure",
-          "columnsFrom": ["payload_branch_closure_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
@@ -1014,6 +991,6 @@
   "internal": {
     "indexes": {}
   },
-  "id": "68efe8cb-2ce7-46ee-bdb9-8a167a0f8c8c",
+  "id": "72df1090-ecf0-4e3e-b6ab-64d44aa65518",
   "prevId": "00000000-0000-0000-0000-000000000000"
 }

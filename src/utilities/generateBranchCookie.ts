@@ -1,6 +1,6 @@
 import { generateCookie } from 'payload/shared'
 
-import { branchCookieName } from './getBranchFromCookie.js'
+import { branchCookieName } from './getActiveBranch.js'
 
 interface Args {
   expires?: Date

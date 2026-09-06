@@ -1,26 +1,50 @@
-import type { CollectionBeforeOperationHook, CollectionSlug, Config } from 'payload'
+import type { CollectionSlug, Config } from 'payload'
 
-import { branchClosure } from './collections/branchClosure.js'
 import { branches } from './collections/branches.js'
 import { branchField } from './fields/branchField.js'
+import { branchIndicatorField } from './fields/branchIndicatorField.js'
 import { canonicalIdField } from './fields/canonicalIdField.js'
 import { filterDocumentsByBranch } from './filters/filterDocumentsByBranch.js'
-import { redirectReadToBranch } from './hooks/redirectReadToBranch.js'
-import { redirectUpdateToBranch } from './hooks/redirectUpdateToBranch.js'
+import { branchOperationHook } from './hooks/branchOperationHook.js'
 import { combineFilters } from './utilities/combineFilters.js'
 
 export { generateBranchCookie } from './utilities/generateBranchCookie.js'
-export { branchCookieName } from './utilities/getBranchFromCookie.js'
+export { branchCookieName, branchQueryParamName } from './utilities/getActiveBranch.js'
+export { resolveBranchedDocs } from './utilities/resolveBranchedDocs.js'
 
 export interface PayloadPluginBranchingConfig {
-  branchClosureSlug?: string
+  /**
+   * The slug for the branches collection.
+   *
+   * @default 'payload-branches'
+   */
   branchesSlug?: string
+  /**
+   * Name of the hidden field storing which branch a document belongs to.
+   *
+   * @default 'branch'
+   */
+  branchFieldName?: string
+  /**
+   * Name of the hidden field linking a diverged document back to its base
+   * (Default-branch) row.
+   *
+   * @default 'canonicalId'
+   */
+  canonicalIdFieldName?: string
+  /**
+   * Collections to add branch-scoping to.
+   */
   collections?: Partial<Record<CollectionSlug, true>>
+  /**
+   * Disables the plugin while still returning a valid config.
+   *
+   * @default false
+   */
   disabled?: boolean
 }
 
 const defaults = {
-  branchClosureSlug: 'payload-branch-closure',
   branchesSlug: 'payload-branches',
   branchFieldName: 'branch',
   canonicalIdFieldName: 'canonicalId',
@@ -34,13 +58,11 @@ export const payloadPluginBranching =
     }
 
     const branchesSlug = pluginOptions.branchesSlug ?? defaults.branchesSlug
-    const branchClosureSlug = pluginOptions.branchClosureSlug ?? defaults.branchClosureSlug
+    const branchFieldName = pluginOptions.branchFieldName ?? defaults.branchFieldName
+    const canonicalIdFieldName = pluginOptions.canonicalIdFieldName ?? defaults.canonicalIdFieldName
 
     config.collections ??= []
-    config.collections.push(
-      branches({ slug: branchesSlug, closureSlug: branchClosureSlug }),
-      branchClosure({ slug: branchClosureSlug, branchesSlug }),
-    )
+    config.collections.push(branches({ slug: branchesSlug }))
 
     for (const collection of config.collections) {
       if (!pluginOptions.collections?.[collection.slug]) {
@@ -48,8 +70,9 @@ export const payloadPluginBranching =
       }
 
       collection.fields.unshift(
-        branchField({ name: defaults.branchFieldName, branchesSlug }),
-        canonicalIdField({ name: defaults.canonicalIdFieldName }),
+        branchField({ name: branchFieldName, branchesSlug }),
+        canonicalIdField({ name: canonicalIdFieldName }),
+        branchIndicatorField({ branchesSlug, branchFieldName }),
       )
 
       collection.admin ??= {}
@@ -57,9 +80,8 @@ export const payloadPluginBranching =
         ...(collection.admin.baseFilter ? { baseFilter: collection.admin.baseFilter } : {}),
         customFilter: ({ req }) =>
           filterDocumentsByBranch({
-            branchClosureSlug,
             branchesSlug,
-            branchFieldName: defaults.branchFieldName,
+            branchFieldName,
             req,
           }),
       })
@@ -67,19 +89,12 @@ export const payloadPluginBranching =
       collection.hooks ??= {}
       collection.hooks.beforeOperation ??= []
       collection.hooks.beforeOperation.push(
-        redirectUpdateToBranch({
+        branchOperationHook({
           branchesSlug,
-          branchFieldName: defaults.branchFieldName,
-          canonicalIdFieldName: defaults.canonicalIdFieldName,
+          branchFieldName,
+          canonicalIdFieldName,
           collectionSlug: collection.slug,
-        }) as unknown as CollectionBeforeOperationHook,
-        redirectReadToBranch({
-          branchClosureSlug,
-          branchesSlug,
-          branchFieldName: defaults.branchFieldName,
-          canonicalIdFieldName: defaults.canonicalIdFieldName,
-          collectionSlug: collection.slug,
-        }) as unknown as CollectionBeforeOperationHook,
+        }),
       )
     }
 
@@ -87,6 +102,16 @@ export const payloadPluginBranching =
     config.admin.components ??= {}
     config.admin.components.beforeDashboard ??= []
     config.admin.components.beforeDashboard.push('payload-plugin-branching/rsc#Greeting')
+
+    const hasBranchScopedCollections = Object.keys(pluginOptions.collections ?? {}).length > 0
+
+    if (hasBranchScopedCollections) {
+      config.admin.components.beforeNav ??= []
+      config.admin.components.beforeNav.push({
+        clientProps: { branchesSlug },
+        path: 'payload-plugin-branching/rsc#BranchSelector',
+      })
+    }
 
     const incomingOnInit = config.onInit
 

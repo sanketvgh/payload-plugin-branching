@@ -1,41 +1,46 @@
 import config from '@payload-config'
-import { cookies } from 'next/headers'
 import Link from 'next/link'
 import { getPayload } from 'payload'
-
-import BranchSwitcher from '../../components/BranchSwitcher'
+import { branchQueryParamName } from 'payload-plugin-branching'
 
 type Args = {
   params: Promise<{ id: string }>
+  searchParams: Promise<Record<string, string | string[] | undefined>>
 }
 
-const PostPage = async ({ params }: Args) => {
+const PostPage = async ({ params, searchParams }: Args) => {
   const { id } = await params
+  const query = await searchParams
+  const activeBranchId = query[branchQueryParamName]
   const payload = await getPayload({ config })
-  const cookieStore = await cookies()
-  const activeBranchCookie = cookieStore.get('payload-branch')
 
+  // The active branch travels as a `?payload-branch=` request param rather
+  // than a cookie, so any decoupled client (a separate app, a mobile app,
+  // a static build) can select a branch explicitly without relying on
+  // same-origin cookies. Payload's local API takes a partial `req`; a bare
+  // URLSearchParams is enough for redirectReadToBranch to resolve it.
   const post = await payload.findByID({
     id,
     collection: 'posts',
     req: {
-      headers: new Headers(cookieStore.toString() ? [['cookie', cookieStore.toString()]] : []),
+      searchParams: new URLSearchParams(
+        typeof activeBranchId === 'string' ? { [branchQueryParamName]: activeBranchId } : {},
+      ),
     },
   })
 
-  const { docs: branches } = await payload.find({ collection: 'payload-branches' })
+  const backHref =
+    typeof activeBranchId === 'string' ? `/?${branchQueryParamName}=${activeBranchId}` : '/'
 
   return (
-    <main>
-      <p>
-        <Link href="/">Back to posts</Link>
-      </p>
-      <h1>Post {id}</h1>
-      <BranchSwitcher
-        activeBranchId={activeBranchCookie?.value ?? null}
-        branches={branches.map((branch) => ({ id: String(branch.id), name: branch.name }))}
-      />
-      <p>{post.content}</p>
+    <main className="page">
+      <Link className="back-link" href={backHref}>
+        Back to posts
+      </Link>
+      <article className="post-detail">
+        <h1>{post.title}</h1>
+        <p>{post.content}</p>
+      </article>
     </main>
   )
 }

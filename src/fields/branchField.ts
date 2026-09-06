@@ -5,11 +5,9 @@ interface Args {
   name: string
 }
 
-// New documents always land on the default branch regardless of which
-// branch is active at creation time, only diverging later via
-// redirectUpdateToBranch when someone edits them on a branch. This keeps
-// every branch seeing every document by default (git-like inheritance),
-// with isolation only kicking in on edit.
+// Set by scopeCreateToBranch on create (to the active branch, or left null
+// for Default) and by redirectUpdateToBranch on edit (when diverging an
+// inherited document under a different branch).
 export const branchField = ({ name, branchesSlug }: Args): SingleRelationshipField => ({
   name,
   type: 'relationship',
@@ -18,6 +16,7 @@ export const branchField = ({ name, branchesSlug }: Args): SingleRelationshipFie
     allowEdit: false,
     disableListColumn: true,
     disableListFilter: true,
+    hidden: true,
     position: 'sidebar',
   },
   hasMany: false,

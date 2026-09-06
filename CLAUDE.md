@@ -39,7 +39,6 @@ Pre-commit runs `lint-staged` (ESLint --fix + Prettier) via Husky.
 - No em dashes in code, comments, commit messages, or docs. Use a comma, period, or parentheses instead.
 - License: MIT.
 - `payload` must be a `peerDependency`, not a regular dependency.
-- No merge functionality for now, branching/isolation only.
 - Package manager pinned via `packageManager` in `package.json` (Corepack-enforced); `.npmrc` sets `engine-strict=true`.
 - ESLint's `strictTypeChecked`/`stylisticTypeChecked` apply to `src/**/*.ts`, with `eslint-config-prettier` last so formatting rules never collide with Prettier.
 - Commit messages: [Conventional Commits](https://www.conventionalcommits.org) with a leading [Gitmoji](https://gitmoji.dev), e.g. `✨ feat: add branch collection`, `🐛 fix: resolve default branch fallback`. No AI/Claude Code attribution in commit messages.

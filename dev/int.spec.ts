@@ -24,18 +24,18 @@ describe('Plugin integration tests', () => {
   test('boots with the dev collections available', async () => {
     const post = await payload.create({
       collection: 'posts',
-      data: {},
+      data: { title: 'Boot test' },
     })
 
     expect(post.id).toBeDefined()
   })
 })
 
-describe('Branch creation and closure table', () => {
+describe('Branch creation and cached ancestry', () => {
   test('branch creation is a pure pointer and does not touch existing documents', async () => {
     const post = await payload.create({
       collection: 'posts',
-      data: { content: 'original content' },
+      data: { content: 'original content', title: 'Pure pointer test' },
     })
 
     const postIdBefore = post.id
@@ -53,27 +53,16 @@ describe('Branch creation and closure table', () => {
     expect(postAfter.content).toBe('original content')
   })
 
-  test('root branch closure table has self-row at depth 0', async () => {
+  test('root branch has no ancestors', async () => {
     const branch = await payload.create({
       collection: 'payload-branches',
       data: { name: `root-branch-${Date.now()}` },
     })
 
-    const closure = await payload.find({
-      collection: 'payload-branch-closure',
-      where: {
-        descendant: { equals: branch.id },
-      },
-    })
-
-    expect(closure.docs).toHaveLength(1)
-    const selfRow = closure.docs[0] as any
-    expect(String(selfRow.descendant.id ?? selfRow.descendant)).toBe(String(branch.id))
-    expect(String(selfRow.ancestor.id ?? selfRow.ancestor)).toBe(String(branch.id))
-    expect(selfRow.depth).toBe(0)
+    expect(branch.ancestorIds ?? []).toHaveLength(0)
   })
 
-  test('child branch closure table includes self-row and parent ancestors', async () => {
+  test('child branch caches its parent as its ancestor', async () => {
     const root = await payload.create({
       collection: 'payload-branches',
       data: { name: `root-${Date.now()}` },
@@ -84,26 +73,16 @@ describe('Branch creation and closure table', () => {
       data: { name: `child-${Date.now()}`, parentBranch: root.id },
     })
 
-    const closure = await payload.find({
-      collection: 'payload-branch-closure',
-      sort: 'depth',
-      where: {
-        descendant: { equals: child.id },
-      },
+    const reloadedChild = await payload.findByID({
+      id: child.id,
+      collection: 'payload-branches',
+      depth: 0,
     })
 
-    expect(closure.docs).toHaveLength(2)
-    const depthZero = closure.docs[0] as any
-    const depthOne = closure.docs[1] as any
-
-    expect(String(depthZero.ancestor.id ?? depthZero.ancestor)).toBe(String(child.id))
-    expect(depthZero.depth).toBe(0)
-
-    expect(String(depthOne.ancestor.id ?? depthOne.ancestor)).toBe(String(root.id))
-    expect(depthOne.depth).toBe(1)
+    expect((reloadedChild.ancestorIds ?? []).map(String)).toEqual([String(root.id)])
   })
 
-  test('grandchild branch closure table includes 3-level ancestry chain', async () => {
+  test('grandchild branch caches a 2-level ancestry chain, nearest first', async () => {
     const root = await payload.create({
       collection: 'payload-branches',
       data: { name: `root-${Date.now()}` },
@@ -119,25 +98,13 @@ describe('Branch creation and closure table', () => {
       data: { name: `grandchild-${Date.now()}`, parentBranch: child.id },
     })
 
-    const closure = await payload.find({
-      collection: 'payload-branch-closure',
-      sort: 'depth',
-      where: {
-        descendant: { equals: grandchild.id },
-      },
+    const reloaded = await payload.findByID({
+      id: grandchild.id,
+      collection: 'payload-branches',
+      depth: 0,
     })
 
-    expect(closure.docs).toHaveLength(3)
-
-    const ancestors = closure.docs.map((doc: any) => String(doc.ancestor.id ?? doc.ancestor))
-
-    expect(ancestors[0]).toBe(String(grandchild.id))
-    expect(ancestors[1]).toBe(String(child.id))
-    expect(ancestors[2]).toBe(String(root.id))
-
-    expect(closure.docs[0].depth).toBe(0)
-    expect(closure.docs[1].depth).toBe(1)
-    expect(closure.docs[2].depth).toBe(2)
+    expect((reloaded.ancestorIds ?? []).map(String)).toEqual([String(child.id), String(root.id)])
   })
 })
 
@@ -161,7 +128,7 @@ describe('getBranchAncestry utility', () => {
     })
 
     const ancestry = await getBranchAncestry({
-      branchClosureSlug: 'payload-branch-closure',
+      branchesSlug: 'payload-branches',
       branchId: grandchild.id,
       payload,
     })
@@ -179,7 +146,7 @@ describe('Copy-on-write: read before divergence', () => {
 
     const post = await payload.create({
       collection: 'posts',
-      data: { content: 'base content' },
+      data: { content: 'base content', title: 'Read before divergence' },
     })
 
     const readWithBranch = await payload.findByID({
@@ -203,7 +170,7 @@ describe('Copy-on-write: write creates diverged row', () => {
 
     const post = await payload.create({
       collection: 'posts',
-      data: { content: 'original' },
+      data: { content: 'original', title: 'Write creates diverged row' },
     })
 
     const postId = post.id
@@ -256,7 +223,7 @@ describe('Copy-on-write: subsequent writes', () => {
 
     const post = await payload.create({
       collection: 'posts',
-      data: { content: 'original' },
+      data: { content: 'original', title: 'Subsequent writes' },
     })
 
     const postId = post.id
@@ -324,7 +291,7 @@ describe('Copy-on-write: read resolves to nearest ancestor', () => {
 
     const post = await payload.create({
       collection: 'posts',
-      data: { content: 'base content' },
+      data: { content: 'base content', title: 'Nearest ancestor' },
     })
 
     const postId = post.id
@@ -354,12 +321,12 @@ describe('Bulk/list operations do not misfire hooks', () => {
   test('payload.find() bulk list query does not throw and returns expected count', async () => {
     await payload.create({
       collection: 'posts',
-      data: { content: `bulk-test-${Date.now()}-1` },
+      data: { content: `bulk-test-${Date.now()}-1`, title: 'Bulk test 1' },
     })
 
     await payload.create({
       collection: 'posts',
-      data: { content: `bulk-test-${Date.now()}-2` },
+      data: { content: `bulk-test-${Date.now()}-2`, title: 'Bulk test 2' },
     })
 
     expect(async () => {
@@ -378,11 +345,12 @@ describe('filterDocumentsByBranch utility', () => {
     const { filterDocumentsByBranch } = await import('../src/filters/filterDocumentsByBranch.js')
 
     const result = await filterDocumentsByBranch({
-      branchClosureSlug: 'payload-branch-closure',
+      branchesSlug: 'payload-branches',
       branchFieldName: 'branch',
       req: {
         headers: new Headers(),
         payload,
+        searchParams: new URLSearchParams(),
       } as any,
     })
 
@@ -398,17 +366,18 @@ describe('filterDocumentsByBranch utility', () => {
     })
 
     const result = await filterDocumentsByBranch({
-      branchClosureSlug: 'payload-branch-closure',
       branchesSlug: 'payload-branches',
       branchFieldName: 'branch',
       req: {
         headers: new Headers([['cookie', `payload-branch=${branch.id}`]]),
         payload,
+        searchParams: new URLSearchParams(),
       } as any,
     })
 
     expect(result).not.toBeNull()
-    expect((result as any).branch).toBeDefined()
-    expect((result as any).branch.in).toContain(branch.id)
+    const orFilter = (result as any).or[0].branch
+    expect(orFilter).toBeDefined()
+    expect(orFilter.in).toContain(branch.id)
   })
 })
