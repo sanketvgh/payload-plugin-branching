@@ -21,12 +21,17 @@ export async function getBranchAncestry({
   payload,
   req,
 }: Args): Promise<(number | string)[]> {
-  const branch = (await payload.findByID({
-    id: branchId,
-    collection: branchesSlug,
-    depth: 0,
-    ...(req ? { req } : {}),
-  })) as BranchDoc
+  // A stale cookie/query-param branch id (e.g. referencing a branch that
+  // has since been deleted) shouldn't crash whatever page/operation
+  // triggered this lookup; treat it as having no ancestors instead.
+  const branch = (await payload
+    .findByID({
+      id: branchId,
+      collection: branchesSlug,
+      depth: 0,
+      ...(req ? { req } : {}),
+    })
+    .catch(() => null)) as BranchDoc | null
 
-  return branch.ancestorIds ?? []
+  return branch?.ancestorIds ?? []
 }

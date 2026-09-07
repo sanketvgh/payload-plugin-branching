@@ -1,9 +1,11 @@
 import type { ServerFieldBase } from 'payload'
+import type { ReactNode } from 'react'
 
 import { FieldDescription, Pill } from '@payloadcms/ui'
 
 import { getActiveBranch } from '../../utilities/getActiveBranch.js'
 import { getCollectionIDType } from '../../utilities/getCollectionIDType.js'
+import { PromoteButton } from '../PromoteButton/index.client.js'
 
 type Props = {
   branchesSlug: string
@@ -11,11 +13,13 @@ type Props = {
 } & ServerFieldBase
 
 const Wrapper = ({
+  action,
   children,
   description,
   label,
   pillStyle,
 }: {
+  action?: ReactNode
   children: string
   description: string
   label: string
@@ -27,12 +31,14 @@ const Wrapper = ({
       {children}
     </Pill>
     <FieldDescription description={description} marginPlacement="top" path="branchIndicator" />
+    {action ? <div style={{ marginTop: 'calc(var(--base) / 2)' }}>{action}</div> : null}
   </div>
 )
 
 export const BranchIndicatorField = async ({
   branchesSlug,
   branchFieldName,
+  collectionSlug,
   data,
   operation,
   payload,
@@ -119,6 +125,13 @@ export const BranchIndicatorField = async ({
 
   return (
     <Wrapper
+      action={
+        <PromoteButton
+          branchName={branchName}
+          collectionSlug={collectionSlug}
+          id={data.id as number | string}
+        />
+      }
       description={`This is a diverged copy only visible on the ${branchName} branch (and its descendants).`}
       label="Branch"
       pillStyle="success"

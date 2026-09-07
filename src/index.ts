@@ -1,6 +1,7 @@
 import type { CollectionSlug, Config } from 'payload'
 
 import { branches } from './collections/branches.js'
+import { promoteToDefaultEndpoint } from './endpoints/promoteToDefaultEndpoint.js'
 import { branchField } from './fields/branchField.js'
 import { branchIndicatorField } from './fields/branchIndicatorField.js'
 import { canonicalIdField } from './fields/canonicalIdField.js'
@@ -96,6 +97,17 @@ export const payloadPluginBranching =
           collectionSlug: collection.slug,
         }),
       )
+
+      if (collection.endpoints !== false) {
+        collection.endpoints ??= []
+        collection.endpoints.push(
+          promoteToDefaultEndpoint({
+            branchFieldName,
+            canonicalIdFieldName,
+            collectionSlug: collection.slug,
+          }),
+        )
+      }
     }
 
     config.admin ??= {}

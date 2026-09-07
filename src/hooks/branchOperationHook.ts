@@ -12,6 +12,12 @@ interface Args {
   collectionSlug: CollectionSlug
 }
 
+// Lets an internal local-API call (e.g. promoteBranchDocument, which needs
+// to write directly to the canonical row without being re-diverged by the
+// very hook that manages divergence) opt out of this hook for that one
+// call, via `context: { [skipBranchOperationHookContextKey]: true }`.
+export const skipBranchOperationHookContextKey = 'payload-plugin-branching-skip'
+
 interface UpdateByIDArgs {
   data: Record<string, unknown>
   id: number | string
@@ -37,6 +43,10 @@ export const branchOperationHook =
     collectionSlug,
   }: Args): CollectionBeforeOperationHook =>
   async (arg) => {
+    if (arg.context[skipBranchOperationHookContextKey]) {
+      return arg.args
+    }
+
     const idType = getCollectionIDType({ collectionSlug: branchesSlug, payload: arg.req.payload })
     const activeBranch = getActiveBranch({ idType, req: arg.req })
 
