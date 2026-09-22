@@ -1,0 +1,18 @@
+# Keep source, configuration, and documentation files consistent across hosts.
+* text=auto eol=lf
+
+# Assets that must never be treated as text.
+*.gif binary
+*.ico binary
+*.jpeg binary
+*.jpg binary
+*.mp4 binary
+*.mov binary
+*.pdf binary
+*.png binary
+*.tgz binary
+*.ttf binary
+*.woff binary
+*.woff2 binary
+*.webp binary
+*.zip binary

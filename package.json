@@ -17,18 +17,18 @@
     "type": "git",
     "url": "git+https://github.com/sanketvgh/payload-plugin-branching.git"
   },
-  "author": "Sanket Vaghela",
   "license": "MIT",
+  "author": "Sanket Vaghela",
   "type": "module",
   "exports": {
     ".": {
-      "import": "./src/index.ts",
       "types": "./src/index.ts",
+      "import": "./src/index.ts",
       "default": "./src/index.ts"
     },
     "./rsc": {
-      "import": "./src/exports/rsc.ts",
       "types": "./src/exports/rsc.ts",
+      "import": "./src/exports/rsc.ts",
       "default": "./src/exports/rsc.ts"
     }
   },
@@ -38,26 +38,48 @@
     "dist"
   ],
   "scripts": {
-    "build": "pnpm copyfiles && pnpm build:types && pnpm build:swc",
-    "build:swc": "swc ./src -d ./dist --config-file .swcrc --strip-leading-paths",
+    "build": "pnpm clean && pnpm copyfiles && pnpm build:types && pnpm build:swc",
+    "build:swc": "swc ./src -d ./dist --config-file .swcrc --ignore \"**/*.test.ts,**/*.test.tsx\" --strip-leading-paths",
     "build:types": "tsc --outDir dist --rootDir ./src",
+    "changeset": "changeset",
+    "changeset:publish": "pnpm build && changeset publish",
+    "changeset:version": "changeset version",
     "clean": "rimraf {dist,*.tsbuildinfo}",
     "copyfiles": "copyfiles -u 1 \"src/**/*.{html,css,scss,ttf,woff,woff2,eot,svg,jpg,png,json}\" dist/",
+    "predev": "rimraf dev/.next",
     "dev": "next dev dev --turbo",
     "dev:generate-importmap": "pnpm dev:payload generate:importmap",
     "dev:generate-types": "pnpm dev:payload generate:types",
+    "dev:migrate": "pnpm dev:payload migrate",
+    "dev:migrate:create": "pnpm dev:payload migrate:create",
     "dev:payload": "cross-env PAYLOAD_CONFIG_PATH=./dev/payload.config.ts payload",
     "generate:importmap": "pnpm dev:generate-importmap",
     "generate:types": "pnpm dev:generate-types",
     "lint": "eslint",
     "lint:fix": "eslint ./src --fix",
+    "prepare": "husky",
     "test": "pnpm test:int && pnpm test:e2e",
     "test:e2e": "playwright test",
-    "test:int": "vitest",
-    "prepare": "husky",
-    "changeset": "changeset",
-    "changeset:version": "changeset version",
-    "changeset:publish": "pnpm build && changeset publish"
+    "test:int": "pnpm test:unit && pnpm test:integration",
+    "test:unit": "vitest run --config vitest.unit.config.js",
+    "test:integration": "vitest run --config vitest.integration.config.js",
+    "test:types": "tsc --noEmit --project tsconfig.test.json",
+    "typecheck": "tsc --noEmit",
+    "check:deadcode": "knip",
+    "check:exports": "publint",
+    "check:duplication": "jscpd src",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "knip": "knip"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,mjs}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,yml,yaml,css,scss}": [
+      "prettier --write"
+    ]
   },
   "devDependencies": {
     "@changesets/cli": "^3.0.2",
@@ -70,27 +92,34 @@
     "@payloadcms/eslint-config": "3.28.0",
     "@payloadcms/next": "3.84.1",
     "@payloadcms/richtext-lexical": "3.84.1",
+    "@payloadcms/translations": "^3.89.0",
     "@payloadcms/ui": "3.84.1",
     "@playwright/test": "1.62.1",
+    "@stylistic/eslint-plugin": "^5.10.0",
     "@swc-node/register": "1.10.9",
     "@swc/cli": "0.6.0",
     "@types/node": "22.19.9",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
+    "commitlint-config-gitmoji": "^2.3.1",
     "copyfiles": "2.4.1",
     "cross-env": "^7.0.3",
     "eslint": "^9.23.0",
     "eslint-config-next": "16.3.3",
     "eslint-config-prettier": "10.1.1",
     "eslint-plugin-comment-length": "^2.3.1",
+    "eslint-plugin-perfectionist": "^5.11.1",
     "graphql": "^16.8.1",
     "husky": "^9.1.7",
+    "jscpd": "^5.3.0",
+    "knip": "^6.37.0",
     "lint-staged": "^17.4.1",
     "mongodb-memory-server": "10.1.4",
     "next": "16.3.3",
     "open": "^10.1.0",
     "payload": "3.84.1",
     "prettier": "^3.4.2",
+    "publint": "^0.3.24",
     "qs-esm": "8.0.1",
     "react": "19.2.6",
     "react-dom": "19.2.6",
@@ -105,35 +134,29 @@
   "peerDependencies": {
     "payload": "^3.84.1"
   },
+  "packageManager": "pnpm@11.15.0",
   "engines": {
     "node": "^18.20.2 || >=20.9.0",
     "pnpm": "^9 || ^10 || ^11"
   },
-  "packageManager": "pnpm@11.15.0",
   "publishConfig": {
     "access": "public",
     "exports": {
       ".": {
-        "import": "./dist/index.js",
         "types": "./dist/index.d.ts",
+        "import": "./dist/index.js",
         "default": "./dist/index.js"
       },
       "./rsc": {
-        "import": "./dist/exports/rsc.js",
         "types": "./dist/exports/rsc.d.ts",
+        "import": "./dist/exports/rsc.js",
         "default": "./dist/exports/rsc.js"
       }
     },
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts"
   },
-  "lint-staged": {
-    "*.{ts,tsx,js,mjs}": [
-      "eslint --fix",
-      "prettier --write"
-    ],
-    "*.{json,md,yml,yaml,css,scss}": [
-      "prettier --write"
-    ]
+  "dependencies": {
+    "zod": "^4.5.4"
   }
 }

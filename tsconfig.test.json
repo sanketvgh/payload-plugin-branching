@@ -1,0 +1,26 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "composite": false,
+    "emitDeclarationOnly": false,
+    "incremental": false,
+    "noEmit": true,
+    "paths": {
+      "@payload-config": ["./dev/payload.config.ts"]
+    },
+    "plugins": []
+  },
+  "include": [
+    "./src/**/*.ts",
+    "./src/**/*.tsx",
+    "./tests/**/*.ts",
+    "./dev/**/*.ts",
+    "./dev/**/*.tsx"
+  ],
+  "exclude": [
+    "./dev/app/(payload)/admin/importMap.js",
+    "./dev/migrations/**",
+    "./dev/next-env.d.ts",
+    "./dev/payload-types.ts"
+  ]
+}

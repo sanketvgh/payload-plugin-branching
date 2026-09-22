@@ -1,7 +1,10 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
+# private notes, not for commit
+/.private
+
 # dependencies
-/node_modules
+node_modules/
 /.pnp
 .pnp.js
 .yarn/install-state.gz
@@ -58,3 +61,6 @@ next-env.d.ts
 # personal scratch/proposal docs, never committed
 /.scratch/*
 !/.scratch/.gitkeep
+
+# local package-consumer artifacts
+tests/package-consumer/*.tgz

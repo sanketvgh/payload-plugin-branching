@@ -1,0 +1,10 @@
+{
+  "$schema": "https://unpkg.com/knip@5/overview/configuration-schema.json",
+  "ignore": ["dev/migrations/**", "dev/payload-types.ts", "tests/package-consumer/**"],
+  "project": ["src/**/*.{ts,tsx}", "tests/**/*.{ts,tsx}", "dev/**/*.{ts,tsx}", "*.{js,mjs,ts}"],
+  "rules": {
+    "devDependencies": "warn",
+    "exports": "warn",
+    "types": "warn"
+  }
+}
