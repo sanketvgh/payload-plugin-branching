@@ -159,7 +159,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Override installed Payload version
-        run: pnpm add -D -w payload@${{ matrix.payload-version }} --no-frozen-lockfile
+        run: pnpm add -D -w payload@${{ matrix.payload-version }}
 
       - name: Run Vitest Integration Tests
         run: pnpm test:int
