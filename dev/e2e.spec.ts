@@ -258,9 +258,12 @@ test.describe('merge conflict review and apply', () => {
     await expect(authedPage.getByText('Main title (diverged)')).toBeVisible()
     await expect(authedPage.getByText('Branch title')).toBeVisible()
 
-    await authedPage
-      .getByRole('radio', { name: new RegExp(`Use ${branchName}`) })
-      .click({ force: true })
+    const useBranchRadio = authedPage.getByRole('radio', {
+      name: new RegExp(`Use ${branchName}`),
+    })
+
+    await authedPage.getByText(new RegExp(`^Use ${branchName}`)).click()
+    await expect(useBranchRadio).toBeChecked()
 
     await expect(mergeButton).toBeEnabled()
 
@@ -296,11 +299,17 @@ test.describe('a branch stays usable after merging', () => {
 
     await authedPage.goto(`/admin/collections/posts/${post.id}/branch-merge/${branchName}`)
 
-    await authedPage
-      .getByRole('radio', { name: new RegExp(`Use ${branchName}`) })
-      .click({ force: true })
+    const useBranchRadio = authedPage.getByRole('radio', {
+      name: new RegExp(`Use ${branchName}`),
+    })
 
-    await authedPage.getByRole('button', { name: 'Merge into main' }).click()
+    await authedPage.getByText(new RegExp(`^Use ${branchName}`)).click()
+    await expect(useBranchRadio).toBeChecked()
+
+    const mergeButton = authedPage.getByRole('button', { name: 'Merge into main' })
+
+    await expect(mergeButton).toBeEnabled()
+    await mergeButton.click()
     await authedPage.getByRole('button', { name: 'Confirm merge' }).click()
 
     await authedPage.goto(`/admin/collections/posts/${post.id}/branch-merge/${branchName}`)
