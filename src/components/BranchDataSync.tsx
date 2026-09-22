@@ -3,7 +3,7 @@
 import { useConfig, useDocumentInfo, useForm } from '@payloadcms/ui'
 import { useSearchParams } from 'next/navigation.js'
 import type { FC } from 'react'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { z } from 'zod'
 
 import { branchSummarySchema } from '../contracts/branches.js'
@@ -31,6 +31,11 @@ export const BranchDataSync: FC = () => {
 
   const loadedForRef = useRef<null | string>(null)
   const isFirstRunRef = useRef(true)
+  const currentKey = `${collectionSlug ?? ''}:${String(id ?? '')}:${branch ?? ''}`
+
+  const [readyKey, setReadyKey] = useState<null | string>(() =>
+    branch == null || branch === '' ? currentKey : null,
+  )
 
   useEffect(() => {
     if (collectionSlug == null || collectionSlug === '' || id == null) {
@@ -58,13 +63,13 @@ export const BranchDataSync: FC = () => {
           credentials: 'include',
         })
 
-        if (!res.ok) {
-          return
+        if (res.ok) {
+          const doc = documentDataSchema.safeParse(await res.json())
+
+          if (doc.success) await reset(doc.data)
         }
 
-        const doc = documentDataSchema.safeParse(await res.json())
-
-        if (doc.success) await reset(doc.data)
+        setReadyKey(key)
       })()
 
       return
@@ -78,18 +83,22 @@ export const BranchDataSync: FC = () => {
         { credentials: 'include' },
       )
 
-      if (!res.ok) {
-        return
+      if (res.ok) {
+        const json = resolvedDocumentSchema.safeParse(await res.json())
+
+        if (json.success) {
+          loadedBranchRevisions.set(
+            branchKey(collectionSlug, id, branch),
+            json.data.branch.revision,
+          )
+
+          await reset(json.data.resolvedDoc)
+        }
       }
 
-      const json = resolvedDocumentSchema.safeParse(await res.json())
-
-      if (json.success) {
-        loadedBranchRevisions.set(branchKey(collectionSlug, id, branch), json.data.branch.revision)
-        await reset(json.data.resolvedDoc)
-      }
+      setReadyKey(key)
     })()
   }, [apiRoute, branch, collectionSlug, id, reset])
 
-  return null
+  return <span hidden data-branch-sync-ready={readyKey === currentKey ? 'true' : 'false'} />
 }

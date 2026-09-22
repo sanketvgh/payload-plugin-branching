@@ -81,9 +81,12 @@ const test = base.extend<BranchingFixtures>({
 
 const waitForFormReady = async (page: Page) => {
   await expect
-    .poll(async () => (await page.locator('[data-form-ready="false"]').count()) === 0, {
-      timeout: 10_000,
-    })
+    .poll(
+      async () =>
+        (await page.locator('[data-form-ready="false"]').count()) === 0 &&
+        (await page.locator('[data-branch-sync-ready="false"]').count()) === 0,
+      { timeout: 10_000 },
+    )
     .toBe(true)
 }
 
