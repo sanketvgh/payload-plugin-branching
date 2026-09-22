@@ -11,6 +11,7 @@ on:
       - main
       - next
       - develop
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -117,3 +118,49 @@ jobs:
 
       - name: Run E2E Tests
         run: pnpm test:e2e
+
+  # Permanent widen-check: confirms peerDependencies' floor still works and
+  # that current/popular Payload releases don't silently break the plugin.
+  # Bump this list when peerDependencies' floor changes, or when a new
+  # Payload release should be added to the watch list.
+  payload-version-matrix:
+    name: Payload compat (${{ matrix.payload-version }})
+    runs-on: ubuntu-latest
+    needs: quality-gate
+    strategy:
+      fail-fast: false
+      matrix:
+        payload-version:
+          - 3.77.0
+          - 3.84.1
+          - 3.88.0
+          - 3.90.1
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: lts/*
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Override installed Payload version
+        run: |
+          pnpm add -D -w \
+            payload@${{ matrix.payload-version }} \
+            @payloadcms/db-mongodb@${{ matrix.payload-version }} \
+            @payloadcms/db-postgres@${{ matrix.payload-version }} \
+            @payloadcms/db-sqlite@${{ matrix.payload-version }} \
+            @payloadcms/next@${{ matrix.payload-version }} \
+            @payloadcms/richtext-lexical@${{ matrix.payload-version }} \
+            @payloadcms/ui@${{ matrix.payload-version }}
+
+      - name: Run Vitest Integration Tests
+        run: pnpm test:int
