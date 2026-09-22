@@ -16,6 +16,14 @@ execSync('pnpm dev:migrate', {
   stdio: 'inherit',
 })
 
+if (process.env.CI) {
+  execSync('pnpm dev:build', {
+    cwd: import.meta.dirname,
+    env: { ...process.env, DATABASE_URL: databaseUrl },
+    stdio: 'inherit',
+  })
+}
+
 export default defineConfig({
   testDir: './dev',
   testMatch: '**/e2e.spec.{ts,js}',
@@ -23,9 +31,9 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
-  timeout: process.env.CI ? 60_000 : 30_000,
+  timeout: 30_000,
   expect: {
-    timeout: process.env.CI ? 15_000 : 5_000,
+    timeout: process.env.CI ? 8_000 : 5_000,
   },
   reporter: 'html',
   projects: [
@@ -37,15 +45,15 @@ export default defineConfig({
   use: {
     baseURL: 'http://localhost:3000',
 
-    actionTimeout: process.env.CI ? 45_000 : 0,
-    navigationTimeout: process.env.CI ? 45_000 : 0,
+    actionTimeout: 15_000,
+    navigationTimeout: 15_000,
     trace: 'on-first-retry',
   },
   webServer: {
-    command: 'pnpm dev',
+    command: process.env.CI ? 'pnpm dev:start' : 'pnpm dev',
     env: { DATABASE_URL: databaseUrl },
     reuseExistingServer: false,
-    timeout: 120_000,
+    timeout: process.env.CI ? 180_000 : 120_000,
     url: 'http://localhost:3000/admin',
   },
 })
