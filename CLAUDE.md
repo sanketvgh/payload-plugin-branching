@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-`payload-plugin-branching` is a [Payload CMS](https://payloadcms.com) plugin, to be distributed as an npm package, that adds Git-like content branching: multiple named branches per document, edited in isolation, without affecting the default/live content until switched.
+`payload-plugin-branching` is a [Payload CMS](https://payloadcms.com) plugin, to be distributed as an npm package, that adds Git-like content branching: multiple named branches per document, edited in isolation, without affecting main until merged.
 
 ## Commands
 
@@ -39,7 +39,7 @@ Pre-commit runs `lint-staged` (ESLint --fix + Prettier) via Husky.
 - No em dashes in code, comments, commit messages, or docs. Use a comma, period, or parentheses instead.
 - License: MIT.
 - `payload` must be a `peerDependency`, not a regular dependency.
-- No merge functionality for now, branching/isolation only.
+- Merge is in scope: field-level merge with conflict picks (editor reviews per-field diffs and chooses branch vs. target when merging one branch into another). Not yet designed, see plan doc.
 - Package manager pinned via `packageManager` in `package.json` (Corepack-enforced); `.npmrc` sets `engine-strict=true`.
 - ESLint's `strictTypeChecked`/`stylisticTypeChecked` apply to `src/**/*.ts`, with `eslint-config-prettier` last so formatting rules never collide with Prettier.
 - Commit messages: [Conventional Commits](https://www.conventionalcommits.org) with a leading [Gitmoji](https://gitmoji.dev), e.g. `✨ feat: add branch collection`, `🐛 fix: resolve default branch fallback`. No AI/Claude Code attribution in commit messages.
