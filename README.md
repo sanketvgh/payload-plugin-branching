@@ -81,7 +81,7 @@ payloadPluginBranching({
 
 Use your own collection slugs. Each enabled collection gets a branch switcher and a hidden `<slug>-branches` collection. Generate and apply a database migration if your project uses migrations, and regenerate the admin import map if your setup doesn't do it automatically.
 
-Requires Payload `^3.84.1`, Node `^18.20.2 || >=20.9.0`, and an auth collection named `users`.
+Requires Payload `^3.77.0`, Node `^18.20.2 || >=20.9.0`, and an auth collection named `users`.
 
 ## Try it
 
