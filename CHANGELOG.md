@@ -1,5 +1,11 @@
 # payload-plugin-branching
 
+## 0.2.0-beta.1
+
+### Minor Changes
+
+- 28dbaeb: Add named content branching: create, edit and switch between branches per document in isolation from main, with revision-checked saves, a branch switcher and create-branch UI, and field-level three-way merge with conflict review to apply a branch back onto its target.
+
 ## 0.1.1-beta.0
 
 ### Patch Changes
