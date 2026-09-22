@@ -69,6 +69,7 @@ export interface Config {
   collections: {
     posts: Post;
     media: Media;
+    'posts-branches': PostsBranch;
     'payload-kv': PayloadKv;
     users: User;
     'payload-locked-documents': PayloadLockedDocument;
@@ -79,6 +80,7 @@ export interface Config {
   collectionsSelect: {
     posts: PostsSelect<false> | PostsSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
+    'posts-branches': PostsBranchesSelect<false> | PostsBranchesSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -125,6 +127,87 @@ export interface UserAuthOperations {
  */
 export interface Post {
   id: number;
+  title: string;
+  content?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  summary?: string | null;
+  contactEmail?: string | null;
+  viewCount?: number | null;
+  publishAt?: string | null;
+  featured?: boolean | null;
+  category?: ('news' | 'tutorial' | 'opinion' | 'announcement') | null;
+  tags?: ('payload' | 'react' | 'nextjs' | 'typescript' | 'branching')[] | null;
+  priority?: ('low' | 'medium' | 'high') | null;
+  heroImage?: (number | null) | Media;
+  relatedMedia?: (number | null) | Media;
+  gallery?: (number | Media)[] | null;
+  snippet?: string | null;
+  metadata?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  /**
+   * @minItems 2
+   * @maxItems 2
+   */
+  location?: [number, number] | null;
+  links?:
+    | {
+        label?: string | null;
+        url?: string | null;
+        external?: boolean | null;
+        id?: string | null;
+      }[]
+    | null;
+  author?: {
+    name?: string | null;
+    bio?: string | null;
+    avatar?: (number | null) | Media;
+  };
+  layout?:
+    | (
+        | {
+            text?: string | null;
+            attribution?: string | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'quote';
+          }
+        | {
+            heading?: string | null;
+            body?: string | null;
+            tone?: ('info' | 'warning' | 'success') | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'callout';
+          }
+      )[]
+    | null;
+  startDate?: string | null;
+  endDate?: string | null;
+  seoTitle?: string | null;
+  seoDescription?: string | null;
+  socialImage?: (number | null) | Media;
+  socialTitle?: string | null;
+  internalNotes?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -148,12 +231,13 @@ export interface Media {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "payload-kv".
+ * via the `definition` "posts-branches".
  */
-export interface PayloadKv {
+export interface PostsBranch {
   id: number;
-  key: string;
-  data:
+  parent: number | Post;
+  branch: string;
+  overrides?:
     | {
         [k: string]: unknown;
       }
@@ -162,6 +246,36 @@ export interface PayloadKv {
     | number
     | boolean
     | null;
+  baselineSnapshot?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  baselineManifest?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  baselineCapturedAt?: string | null;
+  baselineRevision?: string | null;
+  createdBy?: (number | null) | User;
+  baselineVersionId?: string | null;
+  diverged?: boolean | null;
+  revision: number;
+  lastMergeOperationId?: string | null;
+  lastMergeFingerprint?: string | null;
+  lastMergedAt?: string | null;
+  lastMergedBy?: string | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -190,6 +304,23 @@ export interface User {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-kv".
+ */
+export interface PayloadKv {
+  id: number;
+  key: string;
+  data:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-locked-documents".
  */
 export interface PayloadLockedDocument {
@@ -202,6 +333,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'media';
         value: number | Media;
+      } | null)
+    | ({
+        relationTo: 'posts-branches';
+        value: number | PostsBranch;
       } | null)
     | ({
         relationTo: 'users';
@@ -254,6 +389,65 @@ export interface PayloadMigration {
  * via the `definition` "posts_select".
  */
 export interface PostsSelect<T extends boolean = true> {
+  title?: T;
+  content?: T;
+  summary?: T;
+  contactEmail?: T;
+  viewCount?: T;
+  publishAt?: T;
+  featured?: T;
+  category?: T;
+  tags?: T;
+  priority?: T;
+  heroImage?: T;
+  relatedMedia?: T;
+  gallery?: T;
+  snippet?: T;
+  metadata?: T;
+  location?: T;
+  links?:
+    | T
+    | {
+        label?: T;
+        url?: T;
+        external?: T;
+        id?: T;
+      };
+  author?:
+    | T
+    | {
+        name?: T;
+        bio?: T;
+        avatar?: T;
+      };
+  layout?:
+    | T
+    | {
+        quote?:
+          | T
+          | {
+              text?: T;
+              attribution?: T;
+              id?: T;
+              blockName?: T;
+            };
+        callout?:
+          | T
+          | {
+              heading?: T;
+              body?: T;
+              tone?: T;
+              id?: T;
+              blockName?: T;
+            };
+      };
+  startDate?: T;
+  endDate?: T;
+  seoTitle?: T;
+  seoDescription?: T;
+  socialImage?: T;
+  socialTitle?: T;
+  internalNotes?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -273,6 +467,29 @@ export interface MediaSelect<T extends boolean = true> {
   height?: T;
   focalX?: T;
   focalY?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "posts-branches_select".
+ */
+export interface PostsBranchesSelect<T extends boolean = true> {
+  parent?: T;
+  branch?: T;
+  overrides?: T;
+  baselineSnapshot?: T;
+  baselineManifest?: T;
+  baselineCapturedAt?: T;
+  baselineRevision?: T;
+  createdBy?: T;
+  baselineVersionId?: T;
+  diverged?: T;
+  revision?: T;
+  lastMergeOperationId?: T;
+  lastMergeFingerprint?: T;
+  lastMergedAt?: T;
+  lastMergedBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
