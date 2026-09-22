@@ -1,1 +1,8 @@
+export { BranchDataSync } from '../components/BranchDataSync.js'
+export { BranchSaveButton } from '../components/BranchSaveButton.js'
+export { BranchSwitcher } from '../components/BranchSwitcher/index.js'
+export { DivergedCell } from '../components/DivergedCell.js'
 export { Greeting } from '../components/Greeting.js'
+export { MergeReviewButton } from '../components/MergeReviewButton.js'
+export { BranchMergeView } from '../views/BranchMergeView.js'
+export { BranchMergeViewClient } from '../views/BranchMergeViewClient.js'
