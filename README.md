@@ -16,7 +16,8 @@ summer-rewrite   ●─────●─────●───────╯
 
 A post needs a new introduction. Create `summer-rewrite`, try a few versions, and leave main alone. Someone fixes a typo on main while you work? The merge compares both versions with the content you started from. Separate changes come together automatically. If you both changed the same field, you choose which version to keep.
 
-> Beta. The API and stored data format may change before 1.0.
+> [!WARNING]
+> ⚠️ Early beta. The API and stored data format may change before 1.0. Not yet recommended for production; back up your data before trying it.
 
 ## Branch and edit
 
