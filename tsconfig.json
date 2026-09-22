@@ -5,20 +5,35 @@
     "rootDir": "./",
     "allowJs": true,
     "skipLibCheck": true,
+
+    /* Strict Type-Checking Options */
     "strict": true,
+    "noImplicitReturns": true,
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
     "noFallthroughCasesInSwitch": true,
     "exactOptionalPropertyTypes": true,
-    "esModuleInterop": true,
+    "noPropertyAccessFromIndexSignature": true,
+
+    /* Code Quality & Dead Code Invariants */
+    "allowUnreachableCode": false,
+    "allowUnusedLabels": false,
+    "forceConsistentCasingInFileNames": true,
+
+    /* Module Resolution & Interop */
     "module": "NodeNext",
     "moduleResolution": "nodenext",
-    "resolveJsonModule": true,
+    "moduleDetection": "force",
+    "verbatimModuleSyntax": true,
     "isolatedModules": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+
+    /* Declaration & Build Architecture */
+    "target": "ES2022",
     "jsx": "react-jsx",
     "incremental": true,
     "emitDeclarationOnly": true,
-    "target": "ES2022",
     "composite": true,
     "plugins": [
       {
@@ -26,5 +41,6 @@
       }
     ]
   },
-  "include": ["./src/**/*.ts", "./src/**/*.tsx", "./dev/next-env.d.ts", ".next/dev/types/**/*.ts"]
+  "include": ["./src/**/*.ts", "./src/**/*.tsx", "./dev/next-env.d.ts", ".next/dev/types/**/*.ts"],
+  "exclude": ["./src/**/*.test.ts", "./src/**/*.test.tsx"]
 }

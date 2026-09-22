@@ -1,30 +1,30 @@
+import { execSync } from 'node:child_process'
+import { randomUUID } from 'node:crypto'
+import fs from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
+
 import { defineConfig, devices } from '@playwright/test'
 
-/**
- * Read environment variables from file.
- * https://github.com/motdotla/dotenv
- */
-// import dotenv from 'dotenv';
-// import path from 'path';
-// dotenv.config({ path: path.resolve(__dirname, '.env') });
+const e2eDbDir = path.join(os.tmpdir(), `payload-plugin-branching-e2e-${randomUUID()}`)
+fs.mkdirSync(e2eDbDir, { recursive: true })
+const databaseUrl = `file:${path.join(e2eDbDir, 'payload.db')}`
 
-/**
- * See https://playwright.dev/docs/test-configuration.
- */
+execSync('pnpm dev:migrate', {
+  cwd: import.meta.dirname,
+  env: { ...process.env, DATABASE_URL: databaseUrl },
+  stdio: 'inherit',
+})
+
 export default defineConfig({
   testDir: './dev',
   testMatch: '**/e2e.spec.{ts,js}',
-  /* Run tests in files in parallel */
   fullyParallel: true,
-  /* Fail the build on CI if you accidentally left test.only in the source code. */
   forbidOnly: !!process.env.CI,
-  /* Retry on CI only */
   retries: process.env.CI ? 2 : 0,
-  /* Opt out of parallel tests on CI. */
   workers: process.env.CI ? 1 : undefined,
-  /* Reporter to use. See https://playwright.dev/docs/test-reporters */
+  timeout: process.env.CI ? 60_000 : 30_000,
   reporter: 'html',
-  /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   projects: [
     {
       name: 'chromium',
@@ -32,15 +32,17 @@ export default defineConfig({
     },
   ],
   use: {
-    /* Base URL to use in actions like `await page.goto('/')`. */
     baseURL: 'http://localhost:3000',
 
-    /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
+    actionTimeout: process.env.CI ? 45_000 : 0,
+    navigationTimeout: process.env.CI ? 45_000 : 0,
     trace: 'on-first-retry',
   },
   webServer: {
     command: 'pnpm dev',
-    reuseExistingServer: true,
+    env: { DATABASE_URL: databaseUrl },
+    reuseExistingServer: false,
+    timeout: 120_000,
     url: 'http://localhost:3000/admin',
   },
 })

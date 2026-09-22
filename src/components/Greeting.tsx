@@ -1,4 +1,6 @@
-export const Greeting = () => {
+import type { ReactElement } from 'react'
+
+export const Greeting = (): ReactElement => {
   return (
     <div>
       <span aria-label="waving hand" role="img">
