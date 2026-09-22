@@ -48,6 +48,8 @@
     "copyfiles": "copyfiles -u 1 \"src/**/*.{html,css,scss,ttf,woff,woff2,eot,svg,jpg,png,json}\" dist/",
     "predev": "rimraf dev/.next",
     "dev": "next dev dev --turbo",
+    "dev:build": "next build dev",
+    "dev:start": "next start dev",
     "dev:generate-importmap": "pnpm dev:payload generate:importmap",
     "dev:generate-types": "pnpm dev:payload generate:types",
     "dev:migrate": "pnpm dev:payload migrate",
